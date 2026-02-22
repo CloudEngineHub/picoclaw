@@ -33,6 +33,7 @@ import (
 	"github.com/sipeed/picoclaw/pkg/health"
 	"github.com/sipeed/picoclaw/pkg/heartbeat"
 	"github.com/sipeed/picoclaw/pkg/logger"
+	"github.com/sipeed/picoclaw/pkg/media"
 	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/state"
 	"github.com/sipeed/picoclaw/pkg/tools"
@@ -123,14 +124,18 @@ func gatewayCmd() {
 		return tools.SilentResult(response)
 	})
 
-	channelManager, err := channels.NewManager(cfg, msgBus)
+	// Create media store for file lifecycle management
+	mediaStore := media.NewFileMediaStore()
+
+	channelManager, err := channels.NewManager(cfg, msgBus, mediaStore)
 	if err != nil {
 		fmt.Printf("Error creating channel manager: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Inject channel manager into agent loop for command handling
+	// Inject channel manager and media store into agent loop
 	agentLoop.SetChannelManager(channelManager)
+	agentLoop.SetMediaStore(mediaStore)
 
 	var transcriber *voice.GroqTranscriber
 	groqAPIKey := cfg.Providers.Groq.APIKey
